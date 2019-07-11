@@ -2,6 +2,7 @@
 
 import sys, getopt, re
 from collections import defaultdict
+import spacy
 
 input_file = ''
 dictionary_file = ''
@@ -36,7 +37,7 @@ for opt, arg in opts:
 word_dict = defaultdict(int)
 
 # Scan sentences
-with open(input_file) as f:  
+with open(input_file, encoding='UTF-8') as f:  
 	for line in f:
 		# Convert curly apostrophes to straight
 		line = line.replace(u"\u2018","'")
@@ -100,8 +101,17 @@ sorted_words = sorted(sorted_words, key=lambda x:x[1], reverse=True);
 if limit > 0 and len(sorted_words) > limit:
 	sorted_words = sorted_words[:limit]
 
-for word,num in sorted_words:
-	if words_only:
-		print(word)
-	else:
-		print("{} {}".format(word,num))
+spacy_nlp = spacy.load('es_core_news_md')
+
+with open('sentences-result.txt', 'a', encoding='UTF-8') as output_file:
+    for idx, doc in enumerate(spacy_nlp.pipe([item[0] for item in sorted_words], batch_size=700)):
+        output_file.write('{0} {1} {2}\n'.format(
+            doc[0].text.replace('\n', ''), sorted_words[idx][1], doc[0].is_oov))
+
+
+for word, num in sorted_words:
+    if words_only:
+        print(word)
+    else:
+        result = "{} {}".format(word, num)
+        print(result)
